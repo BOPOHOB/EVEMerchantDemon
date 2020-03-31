@@ -1,0 +1,14 @@
+[package]
+name = "eve_merchant_demon"
+version = "0.1.0"
+authors = ["BOPOHOB <self@bopohob.ru>"]
+edition = "2018"
+
+[dependencies]
+dotenv = "0.15.0"
+json = "0.12.4"
+time = "0.2.9"
+reqwest = "0.10"
+futures = "*"
+base64 = "0.12.0"
+tokio = { version = "0.2", features = ["full"] }
