@@ -1,0 +1,10 @@
+[Unit]
+Description=Eve Merchant Demon
+
+[Service]
+Restart=on-failure
+WorkingDirectory=/root/code/demon
+ExecStart=/root/code/demon/target/release/eve_merchant_demon
+
+[Install]
+WantedBy=multi-user.target
