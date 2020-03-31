@@ -1,5 +1,5 @@
 [Unit]
-Description=Eve Merchant Demon
+Description=merchant_demon
 
 [Service]
 Restart=on-failure
