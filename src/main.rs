@@ -36,9 +36,13 @@ fn save_auth_json_to_file(data: &JsonValue) {
 
 fn main() {
     dotenv::dotenv().ok();
+
+    println!("get market orders");
+    let orders = requests::Request::new().get_market_orders(10000002);
+
     let mut auth_info: JsonValue = read_auth_json_from_file();
     for auth_datum in auth_info.members_mut() {
-        let character : Character = Character::from(&*auth_datum);
+        let mut character : Character = Character::from(&*auth_datum);
         character.perfom_analysis();
         let modified = JsonValue::from(&character);
         *auth_datum = modified;

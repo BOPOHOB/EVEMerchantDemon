@@ -7,11 +7,28 @@ pub struct Character {
     pub name : String,
     tg : String,
     token : TokenHolder,
+    info : JsonValue
 }
 
 impl Character {
-    pub fn perfom_analysis(&self) {
-        println!("perfon analysis for {}", self.name);
+    pub fn perfom_analysis(&mut self) {
+        println!("{}", self.get_orders().pretty(2));
+    }
+
+    pub fn get_info(&mut self) -> &JsonValue {
+        if self.info.is_null() {
+            self.info = self.token.get("https://login.eveonline.com/oauth/verify/");
+        }
+        &self.info
+    }
+
+    pub fn character_id(&mut self) -> i64 {
+        self.get_info()["CharacterID"].as_i64().expect("inner logic fail")
+    }
+
+    pub fn get_orders(&mut self) -> JsonValue {
+        let url = format!("https://esi.evetech.net/v1/characters/{}/orders/", self.character_id());
+        self.token.get(url.as_str())
     }
 }
 
@@ -21,6 +38,7 @@ impl From<&JsonValue> for Character {
             name: data["character_name"].to_string(),
             tg: data["tg_id"].to_string(),
             token: TokenHolder::from(data),
+            info: JsonValue::Null,
         }
     }
 }

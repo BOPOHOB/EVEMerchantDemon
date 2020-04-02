@@ -74,4 +74,8 @@ impl Request {
             .body(body.dump());
         self.request_json(request)
     }
+
+    pub fn get_market_orders(&mut self, market_id: i32) -> JsonValue {
+        self.public_get(format!("https://esi.evetech.net/v1/markets/{}/orders/", market_id).as_str())
+    }
 }
