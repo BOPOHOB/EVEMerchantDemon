@@ -1,11 +1,7 @@
 use json::{ object, JsonValue };
 use time::{ OffsetDateTime, Duration };
-use std::env;
-use tokio::runtime::Runtime;
 
-fn get_env_variable(key: &str)->String {
-    env::var(key).expect(format!("Env variable \"{}\" is not declared", key).as_str())
-}
+use crate::requests::Request;
 
 pub struct TokenHolder {
     access_token: String,
@@ -14,27 +10,14 @@ pub struct TokenHolder {
 }
 
 impl TokenHolder {
-    fn post_request(&self, authorization: &str, url: &str, body : &JsonValue) -> JsonValue {
-        let mut runtime = Runtime::new().expect("Login request get tokio runtime");
-        let responce = runtime.block_on(reqwest::Client::new().post(url)
-            .header("Authorization", authorization)
-            .header("User-Agent", "bopohob merchant monitor")
-            .header("Content-Type", "application/json")
-            .body(body.dump())
-            .send()).expect("Login attempt");
-        let responce_text = runtime.block_on(responce.text()).expect("Login attempt responce body");
-        json::parse(responce_text.as_str()).expect("Login responce json parse")
+    pub fn post(&mut self, url: &str, body : &JsonValue) -> JsonValue {
+        self.check_token();
+        Request::new().character_post(url, self.access_token.as_str(), body)
     }
 
-    fn get_request(&self, url: &str) -> JsonValue {
-        let mut runtime = Runtime::new().expect("Login request get tokio runtime");
-        let responce = runtime.block_on(reqwest::Client::new().get(url)
-            .header("Authorization", format!("Bearer {}", self.access_token))
-            .header("User-Agent", "bopohob merchant monitor")
-            .header("Content-Type", "application/json")
-            .send()).expect("Login attempt");
-        let responce_text = runtime.block_on(responce.text()).expect("Login attempt responce body");
-        json::parse(responce_text.as_str()).expect("Login responce json parse")
+    pub fn get(&mut self, url: &str) -> JsonValue {
+        self.check_token();
+        Request::new().character_get(url, self.access_token.as_str())
     }
 
     fn is_need_to_update_token(&self) -> bool {
@@ -45,9 +28,7 @@ impl TokenHolder {
         if self.is_need_to_update_token() {
             return;
         }
-        let combo =  base64::encode(String::from(format!("{}:{}", get_env_variable("EVE_CLIENT_ID"), get_env_variable("EVE_CLIENT_SECRET"))));
-        let result = self.post_request(
-            format!("Basic {}", combo).as_str(),
+        let result = Request::new().public_post(
             "https://login.eveonline.com/oauth/token",
             &json::object!{
                 grant_type: "refresh_token",
@@ -56,22 +37,6 @@ impl TokenHolder {
         );
         self.access_token = result["access_token"].to_string();
         self.life_time = OffsetDateTime::now() + Duration::new(result["expires_in"].as_u32().expect("Login responce unexpected format").into(), 0);
-    }
-
-    pub fn post(&mut self, url: &str, body: &JsonValue) -> JsonValue {
-        self.check_token();
-        self.post_request(
-            format!("Bearer {}", self.access_token).as_str(),
-            url,
-            body
-        )
-    }
-
-    pub fn get(&mut self, url: &str) -> JsonValue {
-        self.check_token();
-        self.get_request(
-            url
-        )
     }
 }
 

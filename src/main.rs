@@ -10,6 +10,8 @@ use std::io::prelude::*;
 mod character;
 use character::Character;
 
+mod requests;
+
 fn read_auth_json_from_file() -> JsonValue {
     let auth_file_name = env::var("AUTH_FILE").expect("expect AUTH_FILE environment variable");
     match read_to_string(&auth_file_name) {
