@@ -1,8 +1,9 @@
 use tokio::runtime::Runtime;
 use reqwest::header::{ HeaderMap, USER_AGENT, CONTENT_TYPE, HeaderValue };
-use reqwest::{ RequestBuilder, Client };
+use reqwest::{ get, RequestBuilder, Client };
 use std::env;
 use json::JsonValue;
+use percent_encoding::{percent_encode, NON_ALPHANUMERIC};
 
 static USER_AGENT_NAME : &'static str = "bopohob merchant monitor";
 
@@ -26,6 +27,14 @@ impl Request {
         Request {
             context: Runtime::new().expect("Can't get runtime for application web requests")
         }
+    }
+
+    pub fn say(&mut self, chat_id: i64, text: &str) {
+        let domen = get_env_variable("TELEGRAM_API_URL");
+        let token = get_env_variable("TELOXIDE_TOKEN");
+        let url = format!("{}/bot{}/sendMessage?chat_id={}&text={}", domen, token, chat_id, percent_encode(text.as_bytes(), NON_ALPHANUMERIC));
+
+        self.context.block_on(get(url.as_str())).expect(format!("can't say to telegram {}: {}",chat_id, text).as_str());
     }
 
     fn request_json(&mut self, builder: RequestBuilder) -> JsonValue {

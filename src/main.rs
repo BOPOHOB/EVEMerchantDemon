@@ -44,6 +44,9 @@ fn main() {
 
     let mut auth_info: JsonValue = read_auth_json_from_file();
     let mut i = 0;
+
+    requests::Request::new().say(126311217, "1\n2");
+
     loop {
         for auth_datum in auth_info.members_mut() {
             let mut character : Character = Character::from(&*auth_datum);
@@ -51,7 +54,7 @@ fn main() {
             report.map(|s| character.say(&s));
         }
         save_auth_json_to_file(&auth_info);
-        let recall_timeout: Duration = Duration::new(5, 0);
+        let recall_timeout: Duration = Duration::new(5 * 60, 0);
         println!("sleep {}", i);
         sleep(recall_timeout);
         i += 1;

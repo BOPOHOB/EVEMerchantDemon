@@ -4,7 +4,7 @@ use json::JsonValue;
 
 pub struct Order {
     is_buy_order: bool,
-    order_id: i64,
+    pub order_id: i64,
     price: f64,
     region_id: Option<i64>,
     type_id: i64,
@@ -30,12 +30,12 @@ impl OrderAnalyze {
 
     fn take_into_account(&mut self, rival: &Order) {
         if rival.is_buy_order {
-            self.strongest_rival_price = if self.strongest_rival_price > rival.price {self.strongest_rival_price } else { rival.price };
+            self.strongest_rival_price = if self.strongest_rival_price > rival.price { self.strongest_rival_price } else { rival.price };
             if self.price < rival.price {
                 self.position += 1;
             }
         } else {
-            self.strongest_rival_price = if self.strongest_rival_price < rival.price {self.strongest_rival_price } else { rival.price };
+            self.strongest_rival_price = if self.strongest_rival_price < rival.price && self.strongest_rival_price != 0f64 {self.strongest_rival_price } else { rival.price };
             if self.price > rival.price {
                 self.position += 1;
             }
@@ -47,8 +47,7 @@ impl OrderAnalyze {
 impl Order {
     pub fn assay(&mut self) {
         let mut is_self_founded = false;
-        let assay = self.get_assay();
-        for rival in &assay {
+        for rival in self.get_assay() {
             if rival.order_id == self.order_id {
                 is_self_founded = true;
             } else {
@@ -56,9 +55,6 @@ impl Order {
             }
         }
         if !is_self_founded {
-            for rival in &assay {
-                println!("{} != {} for {}", rival.order_id, self.order_id, self.type_id);
-            }
             let item_name = Request::new().get_type(self.type_id)["name"].to_string();
             println!("{} order wasn't found in location responce (critical inner logic fail) {}", self.order_id, item_name);
         }
@@ -82,38 +78,42 @@ impl Order {
     pub fn render_assay_report(&self, previous: Option<&OrderAnalyze>) -> Option<String> {
         match previous {
             Some(prev) => {
-                //if user change price after previous analyze
-                if prev.price != self.price {
-                    return None;
-                }
+                //println!("prev {} {} {} {}", prev.position, prev.analyzed, self.assay_result.position, self.assay_result.analyzed);
                 //if nothing changed
                 if prev.position == self.assay_result.position && self.assay_result.analyzed == prev.analyzed {
                     return None;
                 }
                 //if user start to hold uniq order
                 if prev.position == self.assay_result.position && prev.analyzed != 0 && self.assay_result.analyzed == 0 {
-                    let item_name = Request::new().get_type(self.type_id)["name"].to_string();
+                    return None;
+                    /*let item_name = Request::new().get_type(self.type_id)["name"].to_string();
                     return Some(format!(
                         "From now you don't have any assay for {} ({}) with price {}",
                         self.type_id,
                         item_name,
                         self.price,
-                    ));
+                    ));*/
                 }
                 //if user lose first position
-                if prev.position == 0 && self.assay_result.position != 0 {
+                if prev.position != self.assay_result.position {
                     let item_name = Request::new().get_type(self.type_id)["name"].to_string();
                     return Some(format!(
-                        "Somebody push order {} ({}) from first position by the cost {} (eour prive {})",
+                        "Position changed {} >> {} of {}; delta: {} ({} -- {}); {} {} ({})",
+                        prev.position + 1,
+                        self.assay_result.position + 1,
+                        self.assay_result.analyzed + 1,
+                        (self.price - self.assay_result.strongest_rival_price).abs(),
+                        self.price,
+                        self.assay_result.strongest_rival_price,
+                        self.order_type(),
                         self.type_id,
                         item_name,
-                        self.assay_result.strongest_rival_price,
-                        self.price,
                     ));
                 }
                 None
             }
             None => {
+                println!("pub {}", self.assay_result.position);
                 if self.assay_result.position != 0 {
                     let item_name = Request::new().get_type(self.type_id)["name"].to_string();
                     return Some(format!(
