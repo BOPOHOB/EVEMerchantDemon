@@ -3,6 +3,8 @@ use json::{ object, JsonValue };
 mod token_holder;
 use token_holder::TokenHolder;
 
+use crate::order::Order;
+
 pub struct Character {
     pub name : String,
     tg : String,
@@ -11,8 +13,19 @@ pub struct Character {
 }
 
 impl Character {
-    pub fn perfom_analysis(&mut self) {
-        println!("{}", self.get_orders().pretty(2));
+    pub fn perfom_analysis(&mut self) -> Option<String> {
+        let mut report = String::new();
+        for data in self.get_orders().members() {
+            let mut order = Order::from(data);
+            order.assay();
+            let result = order.render_assay_report(None);
+            result.map(|s| report += &s);
+        }
+        if report.len() == 0 {
+            Some(report)
+        } else {
+            None
+        }
     }
 
     pub fn get_info(&mut self) -> &JsonValue {
@@ -29,6 +42,10 @@ impl Character {
     pub fn get_orders(&mut self) -> JsonValue {
         let url = format!("https://esi.evetech.net/v1/characters/{}/orders/", self.character_id());
         self.token.get(url.as_str())
+    }
+
+    pub fn say(&self, message: &String) {
+        println!("{}", message);
     }
 }
 
