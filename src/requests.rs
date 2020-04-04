@@ -29,14 +29,19 @@ impl Request {
     }
 
     fn request_json(&mut self, builder: RequestBuilder) -> JsonValue {
-        let responce = self.context.block_on(builder.send());
-        let unwraped_responce = match responce {
-            Ok(taked_responce) => taked_responce,
-            Err(err) => panic!("can't take responce from \"{}\"", err.url().unwrap())
-        };
-        let url = format!("{}", unwraped_responce.url());
-        let text = self.context.block_on(unwraped_responce.text()).expect(format!("can't get responce text from \"{}\"", url).as_str());
-        json::parse(text.as_str()).expect(format!("Responce from \"{}\" isn't json {}", url, text).as_str())
+        loop {
+            let responce = self.context.block_on(builder.try_clone().expect("stream body are not supplied").send());
+            let unwraped_responce = match responce {
+                Ok(taked_responce) => taked_responce,
+                Err(err) => panic!("can't take responce from \"{}\"", err.url().unwrap())
+            };
+            let url = format!("{}", unwraped_responce.url());
+            if unwraped_responce.status() == reqwest::StatusCode::OK {
+                let text = self.context.block_on(unwraped_responce.text()).expect(format!("can't get responce text from \"{}\"", url).as_str());
+                return json::parse(text.as_str()).expect(format!("Responce from \"{}\" isn't json {}", url, text).as_str());
+            }
+            println!("{}, {}", url, unwraped_responce.status());
+        }
     }
 
     pub fn public_get(&mut self, url: &str) -> JsonValue {

@@ -42,15 +42,19 @@ fn save_json_to_file(data: &JsonValue, fname: &str) {
 fn main() {
     dotenv::dotenv().ok();
 
-    println!("get market orders");
-
     let mut auth_info: JsonValue = read_auth_json_from_file();
-    for auth_datum in auth_info.members_mut() {
-        let mut character : Character = Character::from(&*auth_datum);
-        let report = character.perfom_analysis();
-        report.map(|s| character.say(&s));
+    let mut i = 0;
+    loop {
+        for auth_datum in auth_info.members_mut() {
+            let mut character : Character = Character::from(&*auth_datum);
+            let report = character.perfom_analysis();
+            report.map(|s| character.say(&s));
+        }
+        save_auth_json_to_file(&auth_info);
+        let recall_timeout: Duration = Duration::new(5, 0);
+        println!("sleep {}", i);
+        sleep(recall_timeout);
+        i += 1;
+        println!("wakeup {}", i);
     }
-    save_auth_json_to_file(&auth_info);
-    let recall_timeout: Duration = Duration::new(0, 10);
-    sleep(recall_timeout);
 }
