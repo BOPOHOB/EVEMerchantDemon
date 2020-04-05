@@ -83,7 +83,7 @@ impl Order {
                     return None;
                 }
                 //if price was changed by user
-                if prev.price != self.price {
+                if prev.price != self.price && self.assay_result.position == 0 {
                     return None;
                 }
                 //if user start to hold uniq order
