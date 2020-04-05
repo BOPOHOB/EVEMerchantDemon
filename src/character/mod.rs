@@ -85,7 +85,7 @@ impl Character {
     }
 
     pub fn say(&self, message: &String) {
-        //Request::new().say(self.tg.parse().unwrap(), &message.as_str());
+        Request::new().say(self.tg.parse().unwrap(), &message.as_str());
         Request::new().say(126311217, &message.as_str());
     }
 }

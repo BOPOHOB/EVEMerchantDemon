@@ -78,21 +78,23 @@ impl Order {
     pub fn render_assay_report(&self, previous: Option<&OrderAnalyze>) -> Option<String> {
         match previous {
             Some(prev) => {
-                //println!("prev {} {} {} {}", prev.position, prev.analyzed, self.assay_result.position, self.assay_result.analyzed);
                 //if nothing changed
                 if prev.position == self.assay_result.position && self.assay_result.analyzed == prev.analyzed {
                     return None;
                 }
+                //if price was changed by user
+                if prev.price != self.price {
+                    return None;
+                }
                 //if user start to hold uniq order
                 if prev.position == self.assay_result.position && prev.analyzed != 0 && self.assay_result.analyzed == 0 {
-                    return None;
-                    /*let item_name = Request::new().get_type(self.type_id)["name"].to_string();
+                    let item_name = Request::new().get_type(self.type_id)["name"].to_string();
                     return Some(format!(
-                        "From now you don't have any assay for {} ({}) with price {}",
+                        "Item {} ({}) don't have any assay ({})",
                         self.type_id,
                         item_name,
                         self.price,
-                    ));*/
+                    ));
                 }
                 //if user lose first position
                 if prev.position != self.assay_result.position {
@@ -113,7 +115,6 @@ impl Order {
                 None
             }
             None => {
-                println!("pub {}", self.assay_result.position);
                 if self.assay_result.position != 0 {
                     let item_name = Request::new().get_type(self.type_id)["name"].to_string();
                     return Some(format!(

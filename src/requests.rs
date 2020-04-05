@@ -42,7 +42,7 @@ impl Request {
             let responce = self.context.block_on(builder.try_clone().expect("stream body are not supplied").send());
             let unwraped_responce = match responce {
                 Ok(taked_responce) => taked_responce,
-                Err(err) => panic!("can't take responce from \"{}\"", err.url().unwrap())
+                Err(err) => panic!("can't take responce from \"{}\" {:?}", err.url().unwrap(), err)
             };
             let url = format!("{}", unwraped_responce.url());
             if unwraped_responce.status() == reqwest::StatusCode::OK {
