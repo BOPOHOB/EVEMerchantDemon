@@ -3,10 +3,11 @@ use std::fs::{ File, read_to_string };
 use std::io::prelude::*;
 use std::collections::HashMap;
 
-mod token_holder;
+pub mod token_holder;
 use token_holder::TokenHolder;
 
-use crate::order::{ Order, OrderAnalyze };
+use crate::order::{ Order, order_analyze };
+use order_analyze::OrderAnalyze;
 use crate::requests::Request;
 
 pub struct Character {

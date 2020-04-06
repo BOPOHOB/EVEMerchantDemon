@@ -1,47 +1,20 @@
 use crate::requests::Request;
 
+pub mod order_analyze;
+mod price;
+use price::Price;
+use order_analyze::OrderAnalyze;
+
 use json::JsonValue;
+
 
 pub struct Order {
     is_buy_order: bool,
     pub order_id: i64,
-    price: f64,
+    price: Price,
     region_id: Option<i64>,
     type_id: i64,
     pub assay_result: OrderAnalyze,
-}
-
-pub struct OrderAnalyze {
-    position: i64,
-    price: f64,
-    strongest_rival_price: f64,
-    analyzed: i64,
-}
-
-impl OrderAnalyze {
-    pub fn new(price: f64) -> Self {
-        OrderAnalyze {
-            price: price,
-            position: 0i64,
-            strongest_rival_price: 0f64,
-            analyzed: 0i64,
-        }
-    }
-
-    fn take_into_account(&mut self, rival: &Order) {
-        if rival.is_buy_order {
-            self.strongest_rival_price = if self.strongest_rival_price > rival.price { self.strongest_rival_price } else { rival.price };
-            if self.price < rival.price {
-                self.position += 1;
-            }
-        } else {
-            self.strongest_rival_price = if self.strongest_rival_price < rival.price && self.strongest_rival_price != 0f64 {self.strongest_rival_price } else { rival.price };
-            if self.price > rival.price {
-                self.position += 1;
-            }
-        }
-        self.analyzed += 1;
-    }
 }
 
 impl Order {
@@ -104,7 +77,7 @@ impl Order {
                         prev.position + 1,
                         self.assay_result.position + 1,
                         self.assay_result.analyzed + 1,
-                        (self.price - self.assay_result.strongest_rival_price).abs(),
+                        Price::delta(&self.price, &self.assay_result.strongest_rival_price),
                         self.price,
                         self.assay_result.strongest_rival_price,
                         self.order_type(),
@@ -135,7 +108,7 @@ impl Order {
 
 impl From<&JsonValue> for Order {
     fn from(data: &JsonValue) -> Self {
-        let price = data["price"].as_f64().expect("expect number price in order");
+        let price: Price = data["price"].as_f64().expect("expect number price in order").into();
         Order {
             is_buy_order: data["is_buy_order"].as_bool().expect("expect boolean is_buy_order in order"),
             order_id: data["order_id"].as_i64().expect("expect integer order_id in order"),
@@ -143,28 +116,6 @@ impl From<&JsonValue> for Order {
             region_id: data["region_id"].as_i64(),
             type_id: data["type_id"].as_i64().expect("expect integer type_id in order"),
             assay_result: OrderAnalyze::new(price),
-        }
-    }
-}
-
-impl From<&OrderAnalyze> for JsonValue {
-    fn from(data: &OrderAnalyze) -> Self {
-        json::object! {
-            position: data.position,
-            price: data.price,
-            strongest_rival_price: data.strongest_rival_price,
-            analyzed: data.analyzed,
-        }
-    }
-}
-
-impl From<&JsonValue> for OrderAnalyze {
-    fn from(data: &JsonValue) -> Self {
-        OrderAnalyze{
-            position: data["position"].as_i64().expect("expect integer position in OrderAnalyze"),
-            price: data["price"].as_f64().expect("expect float price in OrderAnalyze"),
-            strongest_rival_price: data["strongest_rival_price"].as_f64().expect("expect float strongest_rival_price in OrderAnalyze"),
-            analyzed: data["analyzed"].as_i64().expect("expect integer analyzed in OrderAnalyze"),
         }
     }
 }

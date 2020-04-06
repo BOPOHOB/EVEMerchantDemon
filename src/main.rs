@@ -49,9 +49,10 @@ fn main() {
         for auth_datum in auth_info.members_mut() {
             let mut character : Character = Character::from(&*auth_datum);
             let report = character.perfom_analysis();
-            report.map(|s| character.say(&s));
+            report.map(|r| println!("{}", r));
+            //report.map(|s| character.say(&s));
         }
-        save_auth_json_to_file(&auth_info);
+        //save_auth_json_to_file(&auth_info);
         let recall_timeout: Duration = Duration::new(5 * 60, 0);
         println!("sleep {}", i);
         sleep(recall_timeout);
