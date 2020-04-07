@@ -45,7 +45,12 @@ impl From<Price> for JsonValue {
 
 impl From<&JsonValue> for Price {
     fn from(data: &JsonValue) -> Self {
-        Price(data.as_f64().expect("cost must be a float value"))
+        match *data {
+            JsonValue::Null => { Price(f64::NAN) }
+            JsonValue::Number(value) => { Price(value.into()) }
+            _ => { panic!("cost must be a float value") }
+        }
+
     }
 }
 
@@ -57,7 +62,13 @@ impl From<f64> for Price {
 
 impl Display for Price {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0);
+        if self.0 > 1e9 {
+            write!(f, "{}B", self.0 / 1e9)?;
+        } else if self.0 > 1e6 {
+            write!(f, "{}M", self.0 / 1e6)?;
+        } else {
+            write!(f, "{}", self.0)?;
+        }
         Ok(())
     }
 }

@@ -28,7 +28,6 @@ impl Character {
             result.map(|s| report += format!("{}\n", &s).as_str());
         }
         self.save_assay_file(&orders);
-        println!("{:?}", report);
         if report.len() != 0 {
             Some(report)
         } else {

@@ -21,11 +21,11 @@ impl TokenHolder {
     }
 
     fn is_need_to_update_token(&self) -> bool {
-        self.life_time - OffsetDateTime::now() > Duration::new(20, 0)
+        self.life_time - OffsetDateTime::now() < Duration::new(20, 0)
     }
 
     fn check_token(&mut self) {
-        if self.is_need_to_update_token() {
+        if !self.is_need_to_update_token() {
             return;
         }
         let result = Request::new().public_post(
