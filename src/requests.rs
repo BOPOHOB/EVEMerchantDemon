@@ -35,7 +35,7 @@ impl Request {
         let body = object!{
             text: text,
             chat_id: chat_id,
-            parse_mode: "MarkdownV2"
+            parse_mode: "Markdown"
         };
 
         let builder = Client::new().post(&url)
