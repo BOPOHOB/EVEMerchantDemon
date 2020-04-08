@@ -106,7 +106,7 @@ impl Request {
     pub fn get_market_orders(&mut self, market_id: i64, type_id: i64, order_type: &String) -> JsonValue {
         let mut result : JsonValue = JsonValue::new_array();
         for i in 1..43 {
-            let array = self.public_get(format!("https://esi.evetech.net/v1/markets/{}/orders/?parse_mode=Markdown&page={}&type_id={}&order_type={}", market_id, i, type_id, order_type).as_str());
+            let array = self.public_get(format!("https://esi.evetech.net/v1/markets/{}/orders/?page={}&type_id={}&order_type={}", market_id, i, type_id, order_type).as_str());
             for note in array.members() {
                 result.push(note.clone()).expect("result.push(note.clone())");
             }
