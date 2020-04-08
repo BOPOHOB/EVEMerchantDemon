@@ -20,12 +20,22 @@ pub struct Character {
 impl Character {
     pub fn perfom_analysis(&mut self) -> Option<String> {
         let mut report = String::new();
-        let mut orders = self.get_orders();
+        let mut orders: Vec<Order> = self.get_orders();
         let prev = self.load_assay_file();
+        let mut prev_ids : HashMap<i64, i64> = HashMap::new();
+        for (order_id, order_analyze) in &prev {
+            prev_ids.insert(*order_id, order_analyze.type_id);
+        }
         for order in &mut orders {
             order.assay();
             let result = order.render_assay_report(prev.get(&order.order_id));
             result.map(|s| report += format!("{}\n", &s).as_str());
+            prev_ids.remove(&order.order_id);
+        }
+        let mut request = Request::new();
+        for (_, type_id) in prev_ids {
+            let item_name = request.get_type(type_id)["name"].to_string();
+            report += format!("Order discharge {} ({})\n", type_id, item_name).as_str();
         }
         self.save_assay_file(&orders);
         if report.len() != 0 {

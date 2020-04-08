@@ -57,7 +57,7 @@ impl From<&JsonValue> for OrderAnalyze {
             price: Price::from(&data["price"]),
             strongest_rival_price: Price::from(&data["strongest_rival_price"]),
             analyzed: data["analyzed"].as_i64().expect("expect integer analyzed in OrderAnalyze"),
-            type_id: -1i64,
+            type_id: data["type_id"].as_i64().expect("expect integer type_id in OrderAnalyze"),
         }
     }
 }
