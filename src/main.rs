@@ -42,10 +42,10 @@ fn save_json_to_file(data: &JsonValue, fname: &str) {
 fn main() {
     dotenv::dotenv().ok();
 
-    let mut auth_info: JsonValue = read_auth_json_from_file();
     let mut i = 0;
 
     loop {
+        let mut auth_info: JsonValue = read_auth_json_from_file();
         for auth_datum in auth_info.members_mut() {
             let mut character : Character = Character::from(&*auth_datum);
             let report = character.perfom_analysis();
