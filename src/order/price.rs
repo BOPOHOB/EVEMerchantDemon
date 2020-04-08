@@ -70,9 +70,9 @@ impl From<f64> for Price {
 
 impl Display for Price {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if self.0 > 1e9 {
+        if self.0 >= 1e9 {
             write!(f, "{}B", self.0 / 1e9)?;
-        } else if self.0 > 1e6 {
+        } else if self.0 >= 1e6 {
             write!(f, "{}M", self.0 / 1e6)?;
         } else {
             write!(f, "{}", self.0)?;
