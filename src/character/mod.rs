@@ -35,7 +35,7 @@ impl Character {
         let mut request = Request::new();
         for (_, type_id) in prev_ids {
             let item_name = request.get_type(type_id)["name"].to_string();
-            report += format!("Order discharge {} ({})\n", type_id, item_name).as_str();
+            report += format!("Order discharge *{}*\n", item_name).as_str();
         }
         self.save_assay_file(&orders);
         if report.len() != 0 {
