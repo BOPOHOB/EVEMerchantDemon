@@ -8,15 +8,17 @@ pub struct OrderAnalyze {
     pub price: Price,
     pub strongest_rival_price: Price,
     pub analyzed: i64,
+    pub type_id: i64,
 }
 
 impl OrderAnalyze {
-    pub fn new(price: Price) -> Self {
+    pub fn new(price: Price, type_id: i64) -> Self {
         OrderAnalyze {
             price: price,
             position: 0i64,
             strongest_rival_price: Price::default(),
             analyzed: 0i64,
+            type_id: type_id,
         }
     }
 
@@ -43,6 +45,7 @@ impl From<&OrderAnalyze> for JsonValue {
             price: data.price,
             strongest_rival_price: data.strongest_rival_price,
             analyzed: data.analyzed,
+            type_id: data.type_id,
         }
     }
 }
@@ -54,6 +57,7 @@ impl From<&JsonValue> for OrderAnalyze {
             price: Price::from(&data["price"]),
             strongest_rival_price: Price::from(&data["strongest_rival_price"]),
             analyzed: data["analyzed"].as_i64().expect("expect integer analyzed in OrderAnalyze"),
+            type_id: -1i64,
         }
     }
 }

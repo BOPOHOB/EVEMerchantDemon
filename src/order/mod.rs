@@ -109,13 +109,14 @@ impl Order {
 impl From<&JsonValue> for Order {
     fn from(data: &JsonValue) -> Self {
         let price: Price = data["price"].as_f64().expect("expect number price in order").into();
+        let type_id = data["type_id"].as_i64().expect("expect integer type_id in order");
         Order {
             is_buy_order: data["is_buy_order"].as_bool().expect("expect boolean is_buy_order in order"),
             order_id: data["order_id"].as_i64().expect("expect integer order_id in order"),
             price: price,
             region_id: data["region_id"].as_i64(),
-            type_id: data["type_id"].as_i64().expect("expect integer type_id in order"),
-            assay_result: OrderAnalyze::new(price),
+            type_id: type_id,
+            assay_result: OrderAnalyze::new(price, type_id),
         }
     }
 }
