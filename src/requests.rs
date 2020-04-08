@@ -1,9 +1,8 @@
 use tokio::runtime::Runtime;
 use reqwest::header::{ HeaderMap, USER_AGENT, CONTENT_TYPE, HeaderValue };
-use reqwest::{ get, RequestBuilder, Client };
+use reqwest::{ RequestBuilder, Client };
 use std::env;
-use json::JsonValue;
-use percent_encoding::{percent_encode, NON_ALPHANUMERIC};
+use json::{ object, JsonValue};
 
 static USER_AGENT_NAME : &'static str = "bopohob merchant monitor";
 
@@ -32,9 +31,17 @@ impl Request {
     pub fn say(&mut self, chat_id: i64, text: &str) {
         let domen = get_env_variable("TELEGRAM_API_URL");
         let token = get_env_variable("TELOXIDE_TOKEN");
-        let url = format!("{}/bot{}/sendMessage?chat_id={}&text={}", domen, token, chat_id, percent_encode(text.as_bytes(), NON_ALPHANUMERIC));
+        let url = format!("{}/bot{}/sendMessage", domen, token);
+        let body = object!{
+            text: text,
+            chat_id: chat_id,
+            parse_mode: "MarkdownV2"
+        };
 
-        self.context.block_on(get(url.as_str())).expect(format!("can't say to telegram {}: {}",chat_id, text).as_str());
+        let builder = Client::new().post(&url)
+            .headers(generic_headers())
+            .body(body.dump());
+        self.context.block_on(builder.send()).expect("telegram send message fail");
     }
 
     fn request_json(&mut self, builder: RequestBuilder) -> JsonValue {

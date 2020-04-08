@@ -111,7 +111,6 @@ dependencies = [
  "dotenv",
  "futures",
  "json",
- "percent-encoding",
  "reqwest",
  "time 0.2.9",
  "tokio",

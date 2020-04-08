@@ -63,8 +63,7 @@ impl Order {
                 if prev.position == self.assay_result.position && prev.analyzed != 0 && self.assay_result.analyzed == 0 {
                     let item_name = Request::new().get_type(self.type_id)["name"].to_string();
                     return Some(format!(
-                        "Item {} ({}) don't have any assay ({})",
-                        self.type_id,
+                        "Item *{}* (`{}`) don't have any assay",
                         item_name,
                         self.price,
                     ));
@@ -73,15 +72,13 @@ impl Order {
                 if prev.position != self.assay_result.position {
                     let item_name = Request::new().get_type(self.type_id)["name"].to_string();
                     return Some(format!(
-                        "Position changed {} >> {} of {}; delta: {} ({} -- {}); {} {} ({})",
+                        "Position changed `{}>>{}`; delta: {} ({} -- {}); {} *{}*",
                         prev.position + 1,
                         self.assay_result.position + 1,
-                        self.assay_result.analyzed + 1,
                         Price::delta(&self.price, &self.assay_result.strongest_rival_price),
                         self.price,
                         self.assay_result.strongest_rival_price,
                         self.order_type(),
-                        self.type_id,
                         item_name,
                     ));
                 }
@@ -91,8 +88,7 @@ impl Order {
                 if self.assay_result.position != 0 {
                     let item_name = Request::new().get_type(self.type_id)["name"].to_string();
                     return Some(format!(
-                        "Order {} ({}) {} in {} of {} with price {}",
-                        self.type_id,
+                        "Order *{}* {} in `{}:{}` price {}",
                         item_name,
                         self.order_type(),
                         self.assay_result.position + 1,
