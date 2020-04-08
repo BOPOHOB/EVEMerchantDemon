@@ -1,9 +1,9 @@
 use crate::requests::Request;
 
-pub mod order_analyze;
+pub mod overprint;
 mod price;
 use price::Price;
-use order_analyze::OrderAnalyze;
+use overprint::Overprint;
 
 use json::JsonValue;
 
@@ -14,7 +14,7 @@ pub struct Order {
     price: Price,
     region_id: Option<i64>,
     type_id: i64,
-    pub assay_result: OrderAnalyze,
+    pub assay_result: Overprint,
 }
 
 impl Order {
@@ -48,7 +48,7 @@ impl Order {
         }
     }
 
-    pub fn render_assay_report(&self, previous: Option<&OrderAnalyze>) -> Option<String> {
+    pub fn render_assay_report(&self, previous: Option<&Overprint>) -> Option<String> {
         match previous {
             Some(prev) => {
                 //if nothing changed
@@ -116,7 +116,7 @@ impl From<&JsonValue> for Order {
             price: price,
             region_id: data["region_id"].as_i64(),
             type_id: type_id,
-            assay_result: OrderAnalyze::new(price, type_id),
+            assay_result: Overprint::new(price, type_id),
         }
     }
 }

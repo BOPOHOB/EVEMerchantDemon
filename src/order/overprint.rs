@@ -3,7 +3,7 @@ use super::Order;
 
 use json::JsonValue;
 
-pub struct OrderAnalyze {
+pub struct Overprint {
     pub position: i64,
     pub price: Price,
     pub strongest_rival_price: Price,
@@ -11,9 +11,9 @@ pub struct OrderAnalyze {
     pub type_id: i64,
 }
 
-impl OrderAnalyze {
+impl Overprint {
     pub fn new(price: Price, type_id: i64) -> Self {
-        OrderAnalyze {
+        Overprint {
             price: price,
             position: 0i64,
             strongest_rival_price: Price::default(),
@@ -38,8 +38,8 @@ impl OrderAnalyze {
     }
 }
 
-impl From<&OrderAnalyze> for JsonValue {
-    fn from(data: &OrderAnalyze) -> Self {
+impl From<&Overprint> for JsonValue {
+    fn from(data: &Overprint) -> Self {
         json::object! {
             position: data.position,
             price: data.price,
@@ -50,14 +50,14 @@ impl From<&OrderAnalyze> for JsonValue {
     }
 }
 
-impl From<&JsonValue> for OrderAnalyze {
+impl From<&JsonValue> for Overprint {
     fn from(data: &JsonValue) -> Self {
-        OrderAnalyze{
-            position: data["position"].as_i64().expect("expect integer position in OrderAnalyze"),
+        Overprint{
+            position: data["position"].as_i64().expect("expect integer position in Overprint"),
             price: Price::from(&data["price"]),
             strongest_rival_price: Price::from(&data["strongest_rival_price"]),
-            analyzed: data["analyzed"].as_i64().expect("expect integer analyzed in OrderAnalyze"),
-            type_id: data["type_id"].as_i64().expect("expect integer type_id in OrderAnalyze"),
+            analyzed: data["analyzed"].as_i64().expect("expect integer analyzed in Overprint"),
+            type_id: data["type_id"].as_i64().expect("expect integer type_id in Overprint"),
         }
     }
 }

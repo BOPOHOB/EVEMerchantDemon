@@ -6,8 +6,8 @@ use std::collections::HashMap;
 pub mod token_holder;
 use token_holder::TokenHolder;
 
-use crate::order::{ Order, order_analyze };
-use order_analyze::OrderAnalyze;
+use crate::order::{ Order, overprint };
+use overprint::Overprint;
 use crate::requests::Request;
 
 pub struct Character {
@@ -23,8 +23,8 @@ impl Character {
         let mut orders: Vec<Order> = self.get_orders();
         let prev = self.load_assay_file();
         let mut prev_ids : HashMap<i64, i64> = HashMap::new();
-        for (order_id, order_analyze) in &prev {
-            prev_ids.insert(*order_id, order_analyze.type_id);
+        for (order_id, overprint) in &prev {
+            prev_ids.insert(*order_id, overprint.type_id);
         }
         for order in &mut orders {
             order.assay();
@@ -55,15 +55,15 @@ impl Character {
         file.write_all(content.pretty(2).as_bytes()).expect(format!("Can't save data to file \"{}\"", &fname).as_str());
     }
 
-    fn load_assay_file(&self) -> HashMap<i64, OrderAnalyze> {
+    fn load_assay_file(&self) -> HashMap<i64, Overprint> {
         match read_to_string(&self.assay_file_name()) {
             Ok(content) => {
                 let data = json::parse(&content).expect(format!("Auth file \"{}\" isn't json", &self.assay_file_name()).as_str());
-                let mut result : HashMap<i64, OrderAnalyze> = HashMap::new();
+                let mut result : HashMap<i64, Overprint> = HashMap::new();
                 for (key, datum) in data.entries() {
                     result.insert(
                         key.parse().unwrap(),
-                        OrderAnalyze::from(datum)
+                        Overprint::from(datum)
                     );
                 }
                 result
