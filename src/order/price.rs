@@ -12,8 +12,8 @@ impl Price {
         return (lhs.0 - rhs.0).abs().into()
     }
 
-    pub fn min(lhs : Price, rhs : Price) -> Price {
-        match lhs.partial_cmp(&rhs) {
+    fn take_cmp<'a>(o: Option<Ordering>, lhs : &'a Price, rhs : &'a Price) -> &'a Price {
+        match o {
             Some(result) => {
                 match result {
                     Less | Equal => { lhs }
@@ -23,11 +23,19 @@ impl Price {
             None => {
                 if lhs == lhs { lhs }
                 else { rhs }
-             }
+            }
         }
     }
-    pub fn max(lhs : Price, rhs : Price) -> Price  {
-        Price::min (rhs, lhs)
+
+    pub fn min<'a>(lhs : &'a Price, rhs : &'a Price) -> &'a Price {
+        Price::take_cmp(lhs.partial_cmp(rhs), lhs, rhs)
+    }
+    pub fn max<'a>(lhs : &'a Price, rhs : &'a Price) -> &'a Price  {
+        Price::take_cmp(rhs.partial_cmp(lhs), lhs, rhs)
+    }
+
+    pub fn new(value: f64) -> Price {
+        Price(value)
     }
 }
 

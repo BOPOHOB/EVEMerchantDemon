@@ -22,12 +22,12 @@ impl OrderAnalyze {
 
     pub fn take_into_account(&mut self, rival: &Order) {
         if rival.is_buy_order {
-            self.strongest_rival_price = Price::min(self.strongest_rival_price, rival.price);
+            self.strongest_rival_price = *Price::min(&self.strongest_rival_price, &rival.price);
             if self.price < rival.price {
                 self.position += 1;
             }
         } else {
-            self.strongest_rival_price = Price::max(self.strongest_rival_price, rival.price );
+            self.strongest_rival_price = *Price::max(&self.strongest_rival_price, &rival.price );
             if self.price > rival.price {
                 self.position += 1;
             }
