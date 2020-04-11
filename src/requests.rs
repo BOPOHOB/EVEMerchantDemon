@@ -116,8 +116,4 @@ impl Request {
         }
         result
     }
-
-    pub fn get_type(&mut self, id: i64) -> JsonValue {
-        self.public_get(format!("https://esi.evetech.net/v3/universe/types/{}/", id).as_str())
-    }
 }

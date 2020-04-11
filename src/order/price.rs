@@ -1,10 +1,12 @@
 use json::JsonValue;
-use std::fmt;
-use std::fmt::{ Display };
-use std::cmp::{ PartialOrd, PartialEq, Ordering };
+use std::{
+    fmt::{ self, Display },
+    cmp::{ PartialOrd, PartialEq, Ordering },
+};
 use Ordering::{ Less, Equal, Greater };
+use serde::{Serialize, Deserialize};
 
-#[derive(PartialEq, PartialOrd, Clone, Copy)]
+#[derive(PartialEq, PartialOrd, Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct Price(f64);
 
 impl Price {
@@ -45,20 +47,19 @@ impl Default for Price {
     }
 }
 
-impl From<Price> for JsonValue {
-    fn from(data: Price) -> Self {
-        data.0.into()
-    }
-}
-
 impl From<&JsonValue> for Price {
     fn from(data: &JsonValue) -> Self {
         match *data {
             JsonValue::Null => { Price(f64::NAN) }
             JsonValue::Number(value) => { Price(value.into()) }
-            _ => { panic!("cost must be a float value") }
+            _ => { panic!("Price must be a float value") }
         }
+    }
+}
 
+impl From<Price> for JsonValue {
+    fn from(data: Price) -> Self {
+        data.0.into()
     }
 }
 

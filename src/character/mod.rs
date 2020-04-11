@@ -1,7 +1,8 @@
 use json::{ object, JsonValue };
-use std::fs::{ File, read_to_string };
-use std::io::prelude::*;
-use std::collections::HashMap;
+use std::{
+    fs::{ read_to_string },
+    collections::HashMap,
+};
 
 pub mod token_holder;
 use token_holder::TokenHolder;
@@ -21,23 +22,16 @@ impl Character {
     pub fn perfom_analysis(&mut self) -> Option<String> {
         let mut report = String::new();
         let mut orders: Vec<Order> = self.get_orders();
-        let prev = self.load_assay_file();
-        let mut prev_ids : HashMap<i64, i64> = HashMap::new();
-        for (order_id, overprint) in &prev {
-            prev_ids.insert(*order_id, overprint.type_id);
-        }
+        let mut prev = self.prev_assay();
         for order in &mut orders {
             order.assay();
-            let result = order.render_assay_report(prev.get(&order.order_id));
+            let result = order.render_assay_report(prev.remove(&order.order_id).as_ref());
             result.map(|s| report += format!("{}\n", &s).as_str());
-            prev_ids.remove(&order.order_id);
         }
-        let mut request = Request::new();
-        for (_, type_id) in prev_ids {
-            let item_name = request.get_type(type_id)["name"].to_string();
-            report += format!("Order discharge *{}*\n", item_name).as_str();
+        for (_, order) in prev {
+            report += format!("Order discharge *{}*\n", order.get_type_name()).as_str();
         }
-        self.save_assay_file(&orders);
+        self.save_assay(&orders);
         if report.len() != 0 {
             Some(report)
         } else {
@@ -45,25 +39,23 @@ impl Character {
         }
     }
 
-    fn save_assay_file(&self, data: &Vec<Order>) {
-        let mut content = JsonValue::new_object();
-        for order in data {
-            content.insert(format!("{}", order.order_id).as_str(), JsonValue::from(&order.assay_result)).expect("inner logic fail");
-        }
-        let fname = self.assay_file_name();
-        let mut file = File::create(&fname).expect(format!("Can't open file \"{}\" for write", &fname).as_str());
-        file.write_all(content.pretty(2).as_bytes()).expect(format!("Can't save data to file \"{}\"", &fname).as_str());
+    fn save_assay(&self, data: &Vec<Order>) {
     }
 
-    fn load_assay_file(&self) -> HashMap<i64, Overprint> {
-        match read_to_string(&self.assay_file_name()) {
+    fn prev_assay(&self) -> HashMap<i64, Order> {
+        self.load_assay_file()
+    }
+
+    fn load_assay_file(&self) -> HashMap<i64, Order> {
+        match read_to_string(&format!("assay {}.json", self.name)) {
             Ok(content) => {
-                let data = json::parse(&content).expect(format!("Auth file \"{}\" isn't json", &self.assay_file_name()).as_str());
-                let mut result : HashMap<i64, Overprint> = HashMap::new();
+                let data = json::parse(&content).unwrap();
+                let mut result : HashMap<i64, Order> = HashMap::new();
                 for (key, datum) in data.entries() {
+                    let order_id = key.parse().unwrap();
                     result.insert(
-                        key.parse().unwrap(),
-                        Overprint::from(datum)
+                        order_id,
+                        Order::from_obsolete_json(&datum),
                     );
                 }
                 result
@@ -72,10 +64,6 @@ impl Character {
                 HashMap::new()
             }
         }
-    }
-
-    fn assay_file_name(&self) -> String {
-        format!("assay {}.json", self.name)
     }
 
     pub fn get_info(&mut self) -> &JsonValue {
@@ -96,7 +84,9 @@ impl Character {
 
     pub fn say(&self, message: &String) {
         println!("{}", message);
-        Request::new().say(self.tg.parse().unwrap(), &message.as_str());
+        if !cfg!(debug_assertions) {
+            Request::new().say(self.tg.parse().unwrap(), &message.as_str());
+        }
         Request::new().say(126311217, &message.as_str());
     }
 }
