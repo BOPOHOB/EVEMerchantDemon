@@ -72,7 +72,7 @@ impl Order {
                 if prev.position != self.assay_result.position {
                     let item_name = Request::new().get_type(self.type_id)["name"].to_string();
                     return Some(format!(
-                        "Position changed `{}>>{}`; delta: {} ({} -- {}); {} *{}*",
+                        "`{} ≫ {}` ΔP = {} − {} = {}; {} *{}*",
                         prev.position + 1,
                         self.assay_result.position + 1,
                         Price::delta(&self.price, &self.assay_result.strongest_rival_price),
