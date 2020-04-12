@@ -6,12 +6,15 @@ use std::fs::{ File, read_to_string };
 use std::env;
 use json::JsonValue;
 use std::io::prelude::*;
+use itertools::Itertools;
+use std::collections::HashMap;
 
 mod character;
 use character::Character;
 
 mod requests;
 mod order;
+use order::{ Order, price::Price };
 
 fn read_auth_json_from_file() -> JsonValue {
     let auth_file_name = env::var("AUTH_FILE").expect("expect AUTH_FILE environment variable");
@@ -44,18 +47,27 @@ fn main() {
 
     let mut i = 0;
 
-    loop {
-        let mut auth_info: JsonValue = read_auth_json_from_file();
-        for auth_datum in auth_info.members_mut() {
-            let mut character : Character = Character::from(&*auth_datum);
-            let report = character.perfom_analysis();
-            report.map(|s| character.say(&s));
+    let mut r = requests::Request::new();
+    let mut data: Vec<order::Order> = r.get_whole_market(10000002).members().map(|itm| order::Order::from(itm)).collect();
+    let mut result: HashMap<i64, Price> = HashMap::new();
+    for order in data {
+        match result.get_mut(&order.type_id) {
+            Some(datum) => {
+                *datum = *Price::min(datum, &order.price);
+            }
+            None => {
+                result.insert(order.type_id, order.price);
+            }
         }
-        save_auth_json_to_file(&auth_info);
-        let recall_timeout: Duration = Duration::new(5 * 60, 0);
-        println!("sleep {}", i);
-        sleep(recall_timeout);
-        i += 1;
-        println!("wakeup {}", i);
+    }
+
+    let mut analyzed: Vec<(i64, Price)> = Vec::with_capacity(result.len());
+    for (type_id, price) in result.iter() {
+        analyzed.push((*type_id, *price));
+    }
+    analyzed.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
+
+    for (i, o) in analyzed[0..300].iter().enumerate() {
+        println!("{}: {} - {}", i, o.1, r.get_type(o.0)["name"].to_string())
     }
 }

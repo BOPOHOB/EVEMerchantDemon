@@ -1,7 +1,7 @@
 use crate::requests::Request;
 
 pub mod overprint;
-mod price;
+pub mod price;
 use price::Price;
 use overprint::Overprint;
 
@@ -11,9 +11,9 @@ use json::JsonValue;
 pub struct Order {
     is_buy_order: bool,
     pub order_id: i64,
-    price: Price,
+    pub price: Price,
     region_id: Option<i64>,
-    type_id: i64,
+    pub type_id: i64,
     pub assay_result: Overprint,
 }
 
