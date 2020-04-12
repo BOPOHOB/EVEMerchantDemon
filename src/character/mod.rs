@@ -3,10 +3,10 @@ use std::{
     fs::{ read_to_string },
     collections::HashMap,
 };
+use mongodb::{Client, options::ClientOptions};
 
 pub mod token_holder;
 use token_holder::TokenHolder;
-
 use crate::order::{ Order, overprint };
 use overprint::Overprint;
 use crate::requests::Request;
@@ -21,9 +21,9 @@ pub struct Character {
 impl Character {
     pub fn perfom_analysis(&mut self) -> Option<String> {
         let mut report = String::new();
-        let mut orders: Vec<Order> = self.get_orders();
+        let mut orders: HashMap<i64, Order> = self.get_orders();
         let mut prev = self.prev_assay();
-        for order in &mut orders {
+        for order in orders.values_mut() {
             order.assay();
             let result = order.render_assay_report(prev.remove(&order.order_id).as_ref());
             result.map(|s| report += format!("{}\n", &s).as_str());
@@ -31,7 +31,7 @@ impl Character {
         for (_, order) in prev {
             report += format!("Order discharge *{}*\n", order.get_type_name()).as_str();
         }
-        self.save_assay(&orders);
+        self.save_assay(orders);
         if report.len() != 0 {
             Some(report)
         } else {
@@ -39,7 +39,29 @@ impl Character {
         }
     }
 
-    fn save_assay(&self, data: &Vec<Order>) {
+    fn save_assay(&self, data: HashMap<i64, Order>) {
+        // Parse a connection string into an options struct.
+        let client = Client::with_uri_str(std::env::var("MONGO_URL").expect("expect MONGO_URL environment variable").as_str()).expect("MONGO_URL is incorrect");
+
+        // Get a handle to a collection in the database.
+        let db = client.database(std::env::var("DB_NAME").expect("expect DB_NAME environment variable").as_str());
+        let collection: mongodb::Collection = db.collection(self.mongo_collection_name().as_str());
+
+        collection.delete_many(bson::doc!{}, None);
+
+        let data: Vec<bson::Document> = data.values()
+            .map(|i| {
+                match bson::to_bson(&i).expect("can't serealize") {
+                    bson::Bson::Document(doc) => doc,
+                    _ => panic!("expect serde doc")
+                }
+            })
+            .collect();
+        collection.insert_many(data, None);
+    }
+
+    fn mongo_collection_name(&self) -> String {
+        self.name.chars().filter(|c| !c.is_whitespace()).collect()
     }
 
     fn prev_assay(&self) -> HashMap<i64, Order> {
@@ -77,9 +99,14 @@ impl Character {
         self.get_info()["CharacterID"].as_i64().expect("inner logic fail")
     }
 
-    pub fn get_orders(&mut self) -> Vec<Order> {
+    pub fn get_orders(&mut self) -> HashMap<i64, Order> {
         let url = format!("https://esi.evetech.net/v1/characters/{}/orders/", self.character_id());
-        self.token.get(url.as_str()).members().map(|itm| Order::from(itm)).collect()
+        let mut result: HashMap<i64, Order> = HashMap::new();
+        for order_data in self.token.get(url.as_str()).members() {
+            let order = Order::from(order_data);
+            result.insert(order.order_id, order);
+        }
+        result
     }
 
     pub fn say(&self, message: &String) {

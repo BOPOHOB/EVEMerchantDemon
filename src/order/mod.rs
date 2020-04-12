@@ -110,7 +110,7 @@ impl Order {
                 //if user lose first position
                 if prev_overprint.position != assay_result.position {
                     return Some(format!(
-                        "`{} ≫ {}` ΔP = {} − {} = {}; {} *{}*",
+                        "{} ≫ {} ΔP = {} − {} = {}; {} *{}*",
                         prev_overprint.position + 1,
                         assay_result.position + 1,
                         Price::delta(&self.price, &assay_result.best_price),
