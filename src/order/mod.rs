@@ -19,23 +19,6 @@ pub struct Order {
 }
 
 impl Order {
-    pub fn from_obsolete_json(data: &json::JsonValue) -> Self {
-        Order {
-            is_buy_order: false,
-            order_id: -1,
-            price: (&data["price"]).into(),
-            type_id: data["type_id"].as_i64().unwrap(),
-            region_id: None,
-            assay_result: Some(
-                Overprint{
-                    position: data["position"].as_i64().unwrap(),
-                    best_price: (&data["strongest_rival_price"]).into(),
-                    analyzed: data["analyzed"].as_i64().unwrap(),
-                }
-            ),
-        }
-    }
-
     pub fn assay(&mut self) {
         self.assay_result = Some(Overprint::new());
         let mut is_self_founded = false;
@@ -110,7 +93,7 @@ impl Order {
                 //if user lose first position
                 if prev_overprint.position != assay_result.position {
                     return Some(format!(
-                        "{}»{} Δ: {} ({} − {}) {} *{}*",
+                        "{}»{} Δ: {} ({} − {}) `{}` *{}*",
                         prev_overprint.position + 1,
                         assay_result.position + 1,
                         Price::delta(&self.price, &assay_result.best_price),
@@ -125,7 +108,7 @@ impl Order {
             None => {
                 if assay_result.position != 0 {
                     return Some(format!(
-                        "Order *{}* {} in `{}:{}` price {}",
+                        "{}:{} price {} `{}` *{}*",
                         self.get_type_name(),
                         self.order_direction(),
                         assay_result.position + 1,

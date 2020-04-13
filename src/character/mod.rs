@@ -1,20 +1,23 @@
 use json::{ object, JsonValue };
-use std::{
-    fs::{ read_to_string },
-    collections::HashMap,
+use serde::{Serialize, Deserialize};
+use std::collections::HashMap;
+
+use crate::{
+    order::Order,
+    requests::Request,
+    db::DB,
 };
-use mongodb::Client;
 
-pub mod token_holder;
+mod token_holder;
 use token_holder::TokenHolder;
-use crate::order::Order;
-use crate::requests::Request;
 
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Character {
     pub name : String,
     tg : String,
     token : TokenHolder,
-    info : JsonValue
+    #[serde(rename = "_id")]
+    id: i64,
 }
 
 impl Character {
@@ -22,7 +25,7 @@ impl Character {
         let mut report = String::new();
         let mut orders: HashMap<i64, Order> = self.get_orders();
         println!("{} analyze for {} orders", self.name, orders.len());
-        let mut prev = self.prev_assay();
+        let mut prev = self.load_prev_assay();
         for order in orders.values_mut() {
             order.assay();
             let result = order.render_assay_report(prev.remove(&order.order_id).as_ref());
@@ -39,84 +42,20 @@ impl Character {
         }
     }
 
-    fn save_assay(&mut self, data: HashMap<i64, Order>) {
-        // Parse a connection string into an options struct.
-        let client = Client::with_uri_str(std::env::var("MONGO_URL").expect("expect MONGO_URL environment variable").as_str()).expect("MONGO_URL is incorrect");
-
-        // Get a handle to a collection in the database.
-        let db = client.database(std::env::var("DB_NAME").expect("expect DB_NAME environment variable").as_str());
-        let collection: mongodb::Collection = db.collection(self.mongo_collection_name().as_str());
-
-        collection.delete_many(bson::doc!{}, None).expect("can't clear db");
-
-        let data: Vec<bson::Document> = data.values()
-            .map(|i| {
-                match bson::to_bson(&i).expect("can't serealize") {
-                    bson::Bson::Document(doc) => doc,
-                    _ => panic!("expect serde doc")
-                }
-            })
-            .collect();
-        collection.insert_many(data, None).expect("can't write to db");
+    fn save_assay(&self, data: HashMap<i64, Order>) {
+        DB::save_orders(data, self.mongo_collection_name().as_str())
     }
 
-    fn mongo_collection_name(&mut self) -> String {
-        format!("{}", self.character_id())
+    fn load_prev_assay(&self) -> HashMap<i64, Order> {
+        DB::load_orders(self.mongo_collection_name().as_str())
     }
 
-    fn prev_assay(&mut self) -> HashMap<i64, Order> {
-        let client = Client::with_uri_str(std::env::var("MONGO_URL").expect("expect MONGO_URL environment variable").as_str()).expect("MONGO_URL is incorrect");
-        let db = client.database(std::env::var("DB_NAME").expect("expect DB_NAME environment variable").as_str());
-        let collection: mongodb::Collection = db.collection(self.mongo_collection_name().as_str());
-
-        let mut result: HashMap<i64, Order> = HashMap::new();
-        for doc in collection.find(Some(bson::doc!{}), None).expect("can't read from db") {
-            let order: Order = bson::from_bson(bson::Bson::Document(doc.unwrap())).expect("reading error");
-            result.insert(order.order_id, order);
-        }
-        if result.len() == 0 {
-            result = self.load_assay_file();
-            println!("read assay from file {}", result.len());
-            result
-        } else {
-            println!("read assay from db {}", result.len());
-            result
-        }
-    }
-
-    fn load_assay_file(&self) -> HashMap<i64, Order> {
-        match read_to_string(&format!("assay {}.json", self.name)) {
-            Ok(content) => {
-                let data = json::parse(&content).unwrap();
-                let mut result : HashMap<i64, Order> = HashMap::new();
-                for (key, datum) in data.entries() {
-                    let order_id = key.parse().unwrap();
-                    result.insert(
-                        order_id,
-                        Order::from_obsolete_json(&datum),
-                    );
-                }
-                result
-            },
-            Err(_) => {
-                HashMap::new()
-            }
-        }
-    }
-
-    pub fn get_info(&mut self) -> &JsonValue {
-        if self.info.is_null() {
-            self.info = self.token.get("https://login.eveonline.com/oauth/verify/");
-        }
-        &self.info
-    }
-
-    pub fn character_id(&mut self) -> i64 {
-        self.get_info()["CharacterID"].as_i64().expect("inner logic fail")
+    fn mongo_collection_name(&self) -> String {
+        self.id.to_string()
     }
 
     pub fn get_orders(&mut self) -> HashMap<i64, Order> {
-        let url = format!("https://esi.evetech.net/v1/characters/{}/orders/", self.character_id());
+        let url = format!("https://esi.evetech.net/v1/characters/{}/orders/", self.id);
         let mut result: HashMap<i64, Order> = HashMap::new();
         for order_data in self.token.get(url.as_str()).members() {
             let order = Order::from(order_data);
@@ -135,24 +74,13 @@ impl Character {
 
 impl From<&JsonValue> for Character {
     fn from(data: &JsonValue) -> Self {
+        let mut token = TokenHolder::from(data);
+        let id = token.get("https://login.eveonline.com/oauth/verify/")["CharacterID"].as_i64().expect("inner logic fail");
         Character {
             name: data["character_name"].to_string(),
             tg: data["tg_id"].to_string(),
-            token: TokenHolder::from(data),
-            info: JsonValue::Null,
+            token,
+            id,
         }
-    }
-}
-
-impl From<&Character> for JsonValue {
-    fn from(data: &Character) -> Self {
-        let mut result = object!{
-            character_name: data.name.as_str(),
-            tg_id: data.tg.as_str(),
-        };
-        for (key, value) in JsonValue::from(&data.token).entries() {
-            result.insert(key, value.clone()).unwrap();
-        }
-        result
     }
 }
