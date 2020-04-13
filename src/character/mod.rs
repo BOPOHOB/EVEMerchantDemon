@@ -1,4 +1,3 @@
-use json::{ object, JsonValue };
 use serde::{Serialize, Deserialize};
 use std::collections::HashMap;
 
@@ -69,18 +68,5 @@ impl Character {
             Request::new().say(self.tg.parse().unwrap(), &message.as_str());
         }
         Request::new().say(126311217, &message.as_str());
-    }
-}
-
-impl From<&JsonValue> for Character {
-    fn from(data: &JsonValue) -> Self {
-        let mut token = TokenHolder::from(data);
-        let id = token.get("https://login.eveonline.com/oauth/verify/")["CharacterID"].as_i64().expect("inner logic fail");
-        Character {
-            name: data["character_name"].to_string(),
-            tg: data["tg_id"].to_string(),
-            token,
-            id,
-        }
     }
 }

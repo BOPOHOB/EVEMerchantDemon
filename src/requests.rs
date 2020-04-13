@@ -95,14 +95,6 @@ impl Request {
         self.request_json(request)
     }
 
-    pub fn character_post(&mut self, url: &str, token: &str, body: &JsonValue) -> JsonValue {
-        let request = Client::new().post(url)
-            .headers(generic_headers())
-            .bearer_auth(token)
-            .body(body.dump());
-        self.request_json(request)
-    }
-
     pub fn get_market_orders(&mut self, market_id: i64, type_id: i64, order_type: &String) -> JsonValue {
         let mut result : JsonValue = JsonValue::new_array();
         for i in 1..43 {

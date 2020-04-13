@@ -1,4 +1,4 @@
-use json::{ object, JsonValue };
+use json::JsonValue;
 use serde::{Serialize, Deserialize};
 use time::{ OffsetDateTime, Duration };
 
@@ -12,11 +12,6 @@ pub struct TokenHolder {
 }
 
 impl TokenHolder {
-    pub fn post(&mut self, url: &str, body : &JsonValue) -> JsonValue {
-        self.check_token();
-        Request::new().character_post(url, self.access_token.as_str(), body)
-    }
-
     pub fn get(&mut self, url: &str) -> JsonValue {
         self.check_token();
         Request::new().character_get(url, self.access_token.as_str())
@@ -47,18 +42,5 @@ impl TokenHolder {
         );
         self.access_token = result["access_token"].to_string();
         self.set_life_time(OffsetDateTime::now() + Duration::new(result["expires_in"].as_u32().expect("Login responce unexpected format").into(), 0));
-    }
-}
-
-impl From<&JsonValue> for TokenHolder {
-    fn from(data: &JsonValue) -> Self {
-        let mut holder = TokenHolder {
-            refresh_token: data["refresh_token"].to_string(),
-            timestamp: 0,
-            access_token: data["access_token"].to_string()
-        };
-        holder.set_life_time(OffsetDateTime::from_unix_timestamp(data["expires_in"].as_i64().expect("auth expires_in shoud be a timestamp")));
-        holder.check_token();
-        holder
     }
 }
