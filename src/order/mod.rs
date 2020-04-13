@@ -55,7 +55,7 @@ impl Order {
         Request::new().get_market_orders(
             self.region_id.expect("requere integer refion_id for user orders"),
             self.type_id,
-            &self.order_type().to_string()
+            &self.order_direction().to_string()
         ).members().map(|itm| Order::from(itm)).collect()
     }
 
@@ -63,7 +63,7 @@ impl Order {
         Request::new().public_get(format!("https://esi.evetech.net/v3/universe/types/{}/", self.type_id).as_str())["name"].to_string()
     }
 
-    fn order_type(&self) -> &str {
+    pub fn order_direction(&self) -> &str {
         match self.is_buy_order {
             true => "buy",
             false => "sell"
@@ -110,13 +110,13 @@ impl Order {
                 //if user lose first position
                 if prev_overprint.position != assay_result.position {
                     return Some(format!(
-                        "{} ≫ {} ΔP = {} − {} = {}; {} *{}*",
+                        "{}»{} Δ: {} ({} − {}) {} *{}*",
                         prev_overprint.position + 1,
                         assay_result.position + 1,
                         Price::delta(&self.price, &assay_result.best_price),
                         self.price,
                         assay_result.best_price,
-                        self.order_type(),
+                        self.order_direction(),
                         self.get_type_name(),
                     ));
                 }
@@ -127,7 +127,7 @@ impl Order {
                     return Some(format!(
                         "Order *{}* {} in `{}:{}` price {}",
                         self.get_type_name(),
-                        self.order_type(),
+                        self.order_direction(),
                         assay_result.position + 1,
                         assay_result.analyzed + 1,
                         self.price,

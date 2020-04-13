@@ -3,12 +3,11 @@ use std::{
     fs::{ read_to_string },
     collections::HashMap,
 };
-use mongodb::{Client, options::ClientOptions};
+use mongodb::Client;
 
 pub mod token_holder;
 use token_holder::TokenHolder;
-use crate::order::{ Order, overprint };
-use overprint::Overprint;
+use crate::order::Order;
 use crate::requests::Request;
 
 pub struct Character {
@@ -22,6 +21,7 @@ impl Character {
     pub fn perfom_analysis(&mut self) -> Option<String> {
         let mut report = String::new();
         let mut orders: HashMap<i64, Order> = self.get_orders();
+        println!("{} analyze for {} orders", self.name, orders.len());
         let mut prev = self.prev_assay();
         for order in orders.values_mut() {
             order.assay();
@@ -29,7 +29,7 @@ impl Character {
             result.map(|s| report += format!("{}\n", &s).as_str());
         }
         for (_, order) in prev {
-            report += format!("Order discharge *{}*\n", order.get_type_name()).as_str();
+            report += format!("Order discharge {} *{}*\n", order.order_direction(), order.get_type_name()).as_str();
         }
         self.save_assay(orders);
         if report.len() != 0 {
@@ -47,7 +47,7 @@ impl Character {
         let db = client.database(std::env::var("DB_NAME").expect("expect DB_NAME environment variable").as_str());
         let collection: mongodb::Collection = db.collection(self.mongo_collection_name().as_str());
 
-        collection.delete_many(bson::doc!{}, None);
+        collection.delete_many(bson::doc!{}, None).expect("can't clear db");
 
         let data: Vec<bson::Document> = data.values()
             .map(|i| {
@@ -57,15 +57,31 @@ impl Character {
                 }
             })
             .collect();
-        collection.insert_many(data, None);
+        collection.insert_many(data, None).expect("can't write to db");
     }
 
-    fn mongo_collection_name(&self) -> String {
-        self.name.chars().filter(|c| !c.is_whitespace()).collect()
+    fn mongo_collection_name(&self) -> &String {
+        &self.tg
     }
 
     fn prev_assay(&self) -> HashMap<i64, Order> {
-        self.load_assay_file()
+        let client = Client::with_uri_str(std::env::var("MONGO_URL").expect("expect MONGO_URL environment variable").as_str()).expect("MONGO_URL is incorrect");
+        let db = client.database(std::env::var("DB_NAME").expect("expect DB_NAME environment variable").as_str());
+        let collection: mongodb::Collection = db.collection(self.mongo_collection_name().as_str());
+
+        let mut result: HashMap<i64, Order> = HashMap::new();
+        for doc in collection.find(Some(bson::doc!{}), None).expect("can't read from db") {
+            let order: Order = bson::from_bson(bson::Bson::Document(doc.unwrap())).expect("reading error");
+            result.insert(order.order_id, order);
+        }
+        if result.len() == 0 {
+            result = self.load_assay_file();
+            println!("read assay from file {}", result.len());
+            result
+        } else {
+            println!("read assay from db {}", result.len());
+            result
+        }
     }
 
     fn load_assay_file(&self) -> HashMap<i64, Order> {
@@ -110,7 +126,6 @@ impl Character {
     }
 
     pub fn say(&self, message: &String) {
-        println!("{}", message);
         if !cfg!(debug_assertions) {
             Request::new().say(self.tg.parse().unwrap(), &message.as_str());
         }
