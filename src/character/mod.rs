@@ -22,7 +22,13 @@ pub struct Character {
 impl Character {
     pub fn perfom_analysis(&mut self) -> Option<String> {
         let mut report = String::new();
-        let mut orders: HashMap<i64, Order> = self.get_orders();
+        let mut orders: HashMap<i64, Order> = match self.get_orders() {
+            Ok(o) => o,
+            Err(_) => {
+                println!("can't get orders list for {} user because network issue", self.name);
+                return None
+            }
+        };
         println!("{} analyze for {} orders", self.name, orders.len());
         let mut prev = self.load_prev_assay();
         for order in orders.values_mut() {
@@ -53,14 +59,14 @@ impl Character {
         self.id.to_string()
     }
 
-    pub fn get_orders(&mut self) -> HashMap<i64, Order> {
-        let url = format!("https://esi.evetech.net/v1/characters/{}/orders/", self.id);
+    pub fn get_orders(&mut self) -> Result<HashMap<i64, Order>, ()> {
+        let url: String = format!("/v1/characters/{}/orders/", self.id);
         let mut result: HashMap<i64, Order> = HashMap::new();
-        for order_data in self.token.get(url.as_str()).members() {
+        for order_data in self.token.get(&url)?.members() {
             let order = Order::from(order_data);
             result.insert(order.order_id, order);
         }
-        result
+        Ok(result)
     }
 
     pub fn say(&self, message: &String) {

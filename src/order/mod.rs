@@ -35,15 +35,23 @@ impl Order {
     }
 
     fn get_assay(&self) -> Vec<Order> {
-        Request::new().get_market_orders(
+        match Request::new().get_market_orders(
             self.region_id.expect("requere integer refion_id for user orders"),
             self.type_id,
             &self.order_direction().to_string()
-        ).members().map(|itm| Order::from(itm)).collect()
+        ) {
+            Ok(orders) => {
+                orders.members().map(|itm| Order::from(itm)).collect()
+            },
+            Err(_) => vec!{}
+        }
     }
 
     pub fn get_type_name(&self) -> String {
-        Request::new().public_get(format!("https://esi.evetech.net/v3/universe/types/{}/", self.type_id).as_str())["name"].to_string()
+        match Request::new().public_get(&format!("/v3/universe/types/{}/", self.type_id)) {
+            Ok(type_data) => type_data["name"].to_string(),
+            Err(_) => format!("{} type", self.type_id)
+        }
     }
 
     pub fn order_direction(&self) -> &str {
