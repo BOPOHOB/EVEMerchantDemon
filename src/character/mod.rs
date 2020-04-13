@@ -39,7 +39,7 @@ impl Character {
         }
     }
 
-    fn save_assay(&self, data: HashMap<i64, Order>) {
+    fn save_assay(&mut self, data: HashMap<i64, Order>) {
         // Parse a connection string into an options struct.
         let client = Client::with_uri_str(std::env::var("MONGO_URL").expect("expect MONGO_URL environment variable").as_str()).expect("MONGO_URL is incorrect");
 
@@ -60,11 +60,11 @@ impl Character {
         collection.insert_many(data, None).expect("can't write to db");
     }
 
-    fn mongo_collection_name(&self) -> &String {
-        &self.tg
+    fn mongo_collection_name(&mut self) -> String {
+        format!("{}", self.character_id())
     }
 
-    fn prev_assay(&self) -> HashMap<i64, Order> {
+    fn prev_assay(&mut self) -> HashMap<i64, Order> {
         let client = Client::with_uri_str(std::env::var("MONGO_URL").expect("expect MONGO_URL environment variable").as_str()).expect("MONGO_URL is incorrect");
         let db = client.database(std::env::var("DB_NAME").expect("expect DB_NAME environment variable").as_str());
         let collection: mongodb::Collection = db.collection(self.mongo_collection_name().as_str());
