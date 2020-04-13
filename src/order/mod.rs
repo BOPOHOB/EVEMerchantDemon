@@ -109,11 +109,11 @@ impl Order {
                 if assay_result.position != 0 {
                     return Some(format!(
                         "{}:{} price {} `{}` *{}*",
-                        self.get_type_name(),
-                        self.order_direction(),
                         assay_result.position + 1,
                         assay_result.analyzed + 1,
                         self.price,
+                        self.order_direction(),
+                        self.get_type_name(),
                     ));
                 }
                 None
